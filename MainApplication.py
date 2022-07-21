@@ -62,7 +62,7 @@ def calcVolume(mask, ds):
 
 def ellipsoidUpperPoint(mask, ds):
     #This function calculates one of possible ellipsoid points
-    #It's not sertainly elipsoid point? but real elipse point should be nearby
+    #It's not sertainly elipsoid point, but real elipse point should be nearby
     sliceSize = len(mask[0]) * len(mask[0][0])
     for i in range(len(mask)):
         for j in range(len(mask[i])):
