@@ -59,6 +59,21 @@ def calcVolume(mask, ds):
     V = V * ds.SliceThickness
     V = V / 1000
     return V
+
+def ellipsoidUpperPoint(mask, ds):
+    #This function calculates one of possible ellipsoid points
+    #It's not sertainly elipsoid point? but real elipse point should be nearby
+    sliceSize = len(mask[0]) * len(mask[0][0])
+    for i in range(len(mask)):
+        for j in range(len(mask[i])):
+            points = np.flatnonzero(mask[i][j])
+            if len(points) > 0:
+                x = points[len(points) // 2] * ds.PixelSpacing[0]
+                y = j * ds.PixelSpacing[0]
+                return [x, y]
+        
+        
+
 #-------------------------------------
 arterial, mask, ds = loadFiles()
 #mean, median, std = calcDensityParams(arterial, mask)
@@ -68,13 +83,16 @@ arterial, mask, ds = loadFiles()
 #print('std density value = ', std)
 #print('----------------------------------')
 
-x, y, z = calcMaxValues(mask, ds)
+#x, y, z = calcMaxValues(mask, ds)
 
-print('x-max = ', x, ' mm')
-print('y-max = ', y, ' mm')
-print('z-max = ', z, ' mm')
-print('----------------------------------')
+#print('x-max = ', x, ' mm')
+#print('y-max = ', y, ' mm')
+#print('z-max = ', z, ' mm')
+#print('----------------------------------')
 
-V = calcVolume(mask, ds)
+#V = calcVolume(mask, ds)
 
-print('Volume = ', V, ' sm^3')
+#print('Volume = ', V, ' sm^3')
+
+x, y = ellipsoidUpperPoint(mask, ds)
+print(x, y)
