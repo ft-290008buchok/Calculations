@@ -123,9 +123,6 @@ def calcMajorAndMinor(mask, ds):
     X = 1 / X
     X = np.abs(X)
     X = np.sqrt(X)
-    a = X[0]
-    b = X[1]
-    c = X[2]
     major = np.amax(X)
     minor = np.amin(X)
     return [major, minor]
