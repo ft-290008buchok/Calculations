@@ -61,79 +61,41 @@ def calcVolume(mask, ds):
     V = V / 1000
     return V
 
-#       -------------------
-#     /|           *      /|
-#    / |  **       *     / |
-#   /  |                /  |
-#  /   |               /   |
-#  --------------------  * |
-# | *  |              |  * |
-# | *  |    **        |    |
-# |     --------------|----
-# |   /               |   /
-# |  /       **       |  /
-# | /                 | /
-# |/                  |/
-#  -------------------
-def paralUpperPoint(mask, ds):
-    #This function calculates one of possible ellipsoid points
-    #It's not sertainly elipsoid point, but real point should be nearby
-    for i in range(len(mask)):
-        for j in range(len(mask[i])):
-            points = np.flatnonzero(mask[i][j])
-            if len(points) > 0:
-                x = points[len(points) // 2] * ds.PixelSpacing[0]
-                y = j * ds.PixelSpacing[0]
-                z = i * ds.SliceThickness
-                return [x, y, z]
+#Nhis code was copied from https://github.com/AIM-Harvard/pyradiomics/blob/master/radiomics/shape.py
+def majorMinorFromPyradiomics(mask, ds):
+    labelledVoxelCoordinates = np.where(mask != 0)
+    Np = len(labelledVoxelCoordinates[0])
+    coordinates = np.array(labelledVoxelCoordinates, dtype='int').transpose((1, 0))
+    physicalCoordinates = coordinates * ds.PixelSpacing[0]
+    physicalCoordinates -= np.mean(physicalCoordinates, axis=0) 
+    physicalCoordinates /= np.sqrt(Np)
+    covariance = np.dot(physicalCoordinates.T.copy(), physicalCoordinates)
+    eigenValues = np.linalg.eigvals(covariance)
 
-def paralLowerPoint(mask, ds):
-    maskSize = len(mask)
-    for i in range(maskSize):
-        for j in range(len(mask[maskSize - 1 - i])):
-            points = np.flatnonzero(mask[maskSize - 1 - i][j])
-            if len(points) > 0:
-                x = points[len(points) // 2] * ds.PixelSpacing[0]
-                y = j * ds.PixelSpacing[0]
-                z = (maskSize - 1 - i) * ds.SliceThickness
-                return [x, y, z]
+    machine_errors = np.bitwise_and(eigenValues < 0, eigenValues > -1e-10)
+    if np.sum(machine_errors) > 0:
+      eigenValues[machine_errors] = 0
 
-def paralFurtherPoint(mask, ds):
-    my = np.moveaxis(mask, 0, 1)
-    for i in range(len(my)):
-        for j in range(len(my[i])):
-            points = np.flatnonzero(my[i][j])
-            if len(points) > 0:
-                x = points[len(points) // 2] * ds.PixelSpacing[0]
-                y = i * ds.PixelSpacing[0]
-                z = j * ds.SliceThickness
-                return [x, y, z]
+    eigenValues.sort()
 
-def calcMajorAndMinor(mask, ds):
-    x1, y1, z1 = paralUpperPoint(mask, ds)
-    x2, y2, z2 = paralLowerPoint(mask, ds)
-    x3, y3, z3 = paralFurtherPoint(mask, ds)
+    if eigenValues[2] < 0:
+      return np.nan
+    major = np.sqrt(eigenValues[2]) * 4
 
-    A = [[x1*x1, y1*y1, z1*z1],
-         [x2*x2, y2*y2, z2*z2],
-         [x3*x3, y3*y3, z3*z3]]
-    B = [1, 1, 1]
+    if eigenValues[1] < 0:
+      return np.nan
+    minor = np.sqrt(eigenValues[1]) * 4
+    return[major, minor]
 
-    X = np.linalg.solve(A, B)
-    X = 1 / X
-    X = np.abs(X)
-    X = np.sqrt(X)
-    major = np.amax(X)
-    minor = np.amin(X)
-    return [major, minor]
+
 #-------------------------------------
 arterial, mask, ds = loadFiles()
-mean, median, std = calcDensityParams(arterial, mask)
+#mean, median, std = calcDensityParams(arterial, mask)
 
-print('mean density value = ', mean)
-print('median density value = ', median)
-print('std density value = ', std)
-print('----------------------------------')
+#print('mean density value = ', mean)
+#print('median density value = ', median)
+#print('std density value = ', std)
+#print('----------------------------------')
 
 x, y, z = calcMaxValues(mask, ds)
 
@@ -142,11 +104,12 @@ print('y-max = ', y, ' mm')
 print('z-max = ', z, ' mm')
 print('----------------------------------')
 
-V = calcVolume(mask, ds)
+#V = calcVolume(mask, ds)
 
-print('Volume = ', V, ' sm^3')
-print('----------------------------------')
+#print('Volume = ', V, ' sm^3')
+#print('----------------------------------')
 
-major, minor = calcMajorAndMinor(mask, ds)
-print('major = ', major, ' mm')
-print('minor = ', minor, ' mm')
+
+major, minor = majorMinorFromPyradiomics(mask, ds)
+print('major Pyradiomics = ', major, ' mm')
+print('minor Pyradiomics = ', minor, ' mm')
