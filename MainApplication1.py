@@ -87,15 +87,53 @@ def majorMinorFromPyradiomics(mask, ds):
     minor = np.sqrt(eigenValues[1]) * 4
     return[major, minor]
 
+def calcUpperLen(nask, ds):
+    for i in range(len(mask)):
+        if len(np.flatnonzero(mask[i])) > 0:
+            return i * ds.SliceThickness
 
+def calcLeftLen(mask, ds):
+    mx = np.moveaxis(mask, 2, 0)
+    for i in range(len(mx)):
+        if len(np.flatnonzero(mx[i])) > 0:
+            return i * ds.PixelSpacing[0]
+
+def calcBackLen(mask, ds):
+    my = np.moveaxis(mask, 0, 1)
+    for i in range(len(my)):
+        if len(np.flatnonzero(my[i])) > 0:
+            return i * ds.PixelSpacing[0]
+
+def calcSphereRadius(mask, ds, x, y, z):
+    labelledVoxelCoordinates = np.where(mask != 0)
+    coordinates = np.array(labelledVoxelCoordinates, dtype='int').transpose((1, 0))
+    physicalCoordinates = coordinates * np.array((ds.SliceThickness, ds.PixelSpacing[0], ds.PixelSpacing[0]))
+    #move physicalCoordinates to the coordinate system centre
+    #physicalCoordinates appraisement
+    xL = calcLeftLen(mask, ds)
+    yL = calcBackLen(mask, ds)
+    zL = calcUpperLen(mask, ds)
+    physicalCoordinates -= np.array((zL, yL, xL))
+    physicalCoordinates -= np.array((z / 2, y / 2, x / 2))
+    
+    #sphere radius
+    R = (x / 2)**2 + (y / 2)**2 + (z / 2)**2
+
+
+    quadroCoordintaes = np.multiply(physicalCoordinates, physicalCoordinates)
+    quadroDistances =  np.sum(quadroCoordintaes, axis = 1)
+    distances = np.sqrt(quadroDistances)
+    ind = distances.argmax()
+    return distances[ind]
+    
 #-------------------------------------
 arterial, mask, ds = loadFiles()
-#mean, median, std = calcDensityParams(arterial, mask)
+mean, median, std = calcDensityParams(arterial, mask)
 
-#print('mean density value = ', mean)
-#print('median density value = ', median)
-#print('std density value = ', std)
-#print('----------------------------------')
+print('mean density value = ', mean)
+print('median density value = ', median)
+print('std density value = ', std)
+print('----------------------------------')
 
 x, y, z = calcMaxValues(mask, ds)
 
@@ -104,12 +142,16 @@ print('y-max = ', y, ' mm')
 print('z-max = ', z, ' mm')
 print('----------------------------------')
 
-#V = calcVolume(mask, ds)
+V = calcVolume(mask, ds)
 
-#print('Volume = ', V, ' sm^3')
-#print('----------------------------------')
+print('Volume = ', V, ' sm^3')
+print('----------------------------------')
 
 
 major, minor = majorMinorFromPyradiomics(mask, ds)
 print('major Pyradiomics = ', major, ' mm')
 print('minor Pyradiomics = ', minor, ' mm')
+print('----------------------------------')
+
+R = calcSphereRadius(mask, ds, x, y, z)
+print('Sphere radius = ', R, ' mm')
