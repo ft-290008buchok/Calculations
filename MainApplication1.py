@@ -131,10 +131,15 @@ def calcBackLen(mask, ds):
 def calcSphereRadius(mask, ds, x, y, z):
     '''
     the radius of the sphere described around the formation is calculated
+    the function takes a binary mask of the formation, one dicom snapshot and 
+    the dimensions of the parallelepiped oriented along the coordinate axes described around the formation, 
+    to find them you can use calcMaxValues()
     '''
+    #extraction of physical coordinates of points of formation
     labelledVoxelCoordinates = np.where(mask != 0)
     coordinates = np.array(labelledVoxelCoordinates, dtype='int').transpose((1, 0))
     physicalCoordinates = coordinates * np.array((ds.SliceThickness, ds.PixelSpacing[0], ds.PixelSpacing[0]))
+
     #move physicalCoordinates to the coordinate system centre
     #physicalCoordinates appraisement
     xL = calcLeftLen(mask, ds)
@@ -143,12 +148,17 @@ def calcSphereRadius(mask, ds, x, y, z):
     physicalCoordinates -= np.array((zL, yL, xL))
     physicalCoordinates -= np.array((z / 2, y / 2, x / 2))
 
+    #calculation of distances from the center of formation to all points of formation
+    #center here is the center of the parallelepiped oriented along the coordinate axes described around the formation
     quadroCoordintaes = np.multiply(physicalCoordinates, physicalCoordinates)
     quadroDistances =  np.sum(quadroCoordintaes, axis = 1)
     distances = np.sqrt(quadroDistances)
+
+    #the point as far as possible from the center is taken as the sphere radius
     ind = distances.argmax()
     return distances[ind]
     
+#examples
 #-------------------------------------
 arterial, mask, ds = loadFiles()
 mean, median, std = calcDensityParams(arterial, mask)
