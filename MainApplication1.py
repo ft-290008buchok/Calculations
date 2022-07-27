@@ -9,6 +9,11 @@ import pydicom.data
 from pydicom.fileset import FileSet
 
 def loadFiles():
+    '''
+    A 3d dicom model converted into a numpy array, 
+    a binary 3d mask of a segmented formation and 
+    one dcm file from a folder with dicom snapshots are loaded
+    '''
     arterial = np.load('arterial.npy')
     maskZip = np.load('segmentationseg.npz')
     mask = maskZip['arr_0']
@@ -17,6 +22,12 @@ def loadFiles():
     return [arterial, mask, ds]
 
 def calcDensityParams(arterial, mask):
+    '''
+    each voxel has a density value, characterizing a point in 3d space, 
+    mean is the arithmetic mean of the formation density, 
+    median is the central value from a series of sorted density values, 
+    std is the standard deviation
+    '''
     arterial -= 1000
     #apply a mask
     arterial = arterial * mask
@@ -28,6 +39,11 @@ def calcDensityParams(arterial, mask):
     return [mean, median, std]
 
 def calcMaxValues(mask, ds):
+    '''
+    dimensions of a parallelepiped 
+    oriented along the coordinate axes 
+    described around the formation
+    '''
     z = 0
     for i in range(len(mask)):
         if len(np.flatnonzero(mask[i])) > 0:
@@ -51,6 +67,10 @@ def calcMaxValues(mask, ds):
     return [x, y, z]
 
 def calcVolume(mask, ds):
+    '''
+    the volume of each slice of the formation 
+    and the total volume are calculated
+    '''
     deltaS = ds.PixelSpacing[0] * ds.PixelSpacing[0]
     V = 0
     for i in range(len(mask)):
@@ -63,6 +83,9 @@ def calcVolume(mask, ds):
 
 #Nhis code was copied from https://github.com/AIM-Harvard/pyradiomics/blob/master/radiomics/shape.py
 def majorMinorFromPyradiomics(mask, ds):
+    '''
+    the major and minor lengths of the formation are calculated
+    '''
     labelledVoxelCoordinates = np.where(mask != 0)
     Np = len(labelledVoxelCoordinates[0])
     coordinates = np.array(labelledVoxelCoordinates, dtype='int').transpose((1, 0))
@@ -87,6 +110,7 @@ def majorMinorFromPyradiomics(mask, ds):
     minor = np.sqrt(eigenValues[1]) * 4
     return[major, minor]
 
+#these are utility functions for calcSphereRadius
 def calcUpperLen(nask, ds):
     for i in range(len(mask)):
         if len(np.flatnonzero(mask[i])) > 0:
@@ -105,6 +129,9 @@ def calcBackLen(mask, ds):
             return i * ds.PixelSpacing[0]
 
 def calcSphereRadius(mask, ds, x, y, z):
+    '''
+    the radius of the sphere described around the formation is calculated
+    '''
     labelledVoxelCoordinates = np.where(mask != 0)
     coordinates = np.array(labelledVoxelCoordinates, dtype='int').transpose((1, 0))
     physicalCoordinates = coordinates * np.array((ds.SliceThickness, ds.PixelSpacing[0], ds.PixelSpacing[0]))
@@ -115,6 +142,10 @@ def calcSphereRadius(mask, ds, x, y, z):
     zL = calcUpperLen(mask, ds)
     physicalCoordinates -= np.array((zL, yL, xL))
     physicalCoordinates -= np.array((z / 2, y / 2, x / 2))
+    
+    #sphere radius
+    R = (x / 2)**2 + (y / 2)**2 + (z / 2)**2
+
 
     quadroCoordintaes = np.multiply(physicalCoordinates, physicalCoordinates)
     quadroDistances =  np.sum(quadroCoordintaes, axis = 1)
