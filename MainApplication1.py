@@ -115,10 +115,6 @@ def calcSphereRadius(mask, ds, x, y, z):
     zL = calcUpperLen(mask, ds)
     physicalCoordinates -= np.array((zL, yL, xL))
     physicalCoordinates -= np.array((z / 2, y / 2, x / 2))
-    
-    #sphere radius
-    R = (x / 2)**2 + (y / 2)**2 + (z / 2)**2
-
 
     quadroCoordintaes = np.multiply(physicalCoordinates, physicalCoordinates)
     quadroDistances =  np.sum(quadroCoordintaes, axis = 1)
