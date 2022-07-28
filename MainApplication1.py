@@ -156,7 +156,56 @@ def calcSphereRadius(mask, ds, x, y, z):
 
     #the point as far as possible from the center is taken as the sphere radius
     ind = distances.argmax()
+    
     return distances[ind]
+
+def getExternalPoints(mask):
+    '''
+    Extracting the extreme points (surface) of a 
+    three-dimensional binary mask of an object
+    '''
+    mx = np.copy(mask)
+    mx = np.moveaxis(mx, 2, 0)
+    mz = np.copy(mask)
+    mz = np.moveaxis(mz, 0, 2)
+
+    for i in range(len(mask)):
+        for j in range(len(mask[i])):
+            points = np.flatnonzero(mask[i][j])
+            pointsNum = len(points)
+            if pointsNum > 0:
+                mask[i][j] *= 0
+                mask[i][j][points[0]] = 1
+                mask[i][j][points[pointsNum - 1]] = 1
+    
+    for i in range(len(mx)):
+        for j in range(len(mx[i])):
+            points = np.flatnonzero(mx[i][j])
+            pointsNum = len(points)
+            if pointsNum > 0:
+                mask[j][points[0]][i] = 1
+                mask[j][points[pointsNum - 1]][i] = 1
+
+    for i in range(len(mz)):
+        for j in range(len(mz[i])):
+            points = np.flatnonzero(mz[i][j])
+            pointsNum = len(points)
+            if pointsNum > 0:
+                mask[points[pointsNum - 1]][i][j] = 1
+                mask[points[0]][i][j] = 1
+
+    labelledVoxelCoordinates = np.where(mask != 0)
+    coordinates = np.array(labelledVoxelCoordinates, dtype='int').transpose((1, 0))
+
+    #show surface in 2 projections
+    plt.imshow(mask[650], cmap=plt.cm.bone)
+    plt.show()
+
+    mask = np.moveaxis(mask, 2, 0)
+    plt.imshow(mask[200], cmap=plt.cm.bone)
+    plt.show()
+
+    return coordinates
     
 #examples
 #-------------------------------------
@@ -188,3 +237,7 @@ print('----------------------------------')
 
 R = calcSphereRadius(mask, ds, x, y, z)
 print('Sphere radius = ', R, ' mm')
+
+coordinates = getExternalPoints(mask)
+print(coordinates)
+print(len(coordinates))
