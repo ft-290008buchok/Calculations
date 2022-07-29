@@ -161,7 +161,7 @@ def calcSphereRadius(mask, ds, x, y, z):
 
 def getExternalPoints(mask):
     '''
-    Extracting the extreme points (surface) of a 
+    Extracting voxel-coordinates the extreme points (surface) of a 
     three-dimensional binary mask of an object
     '''
     mx = np.copy(mask)
@@ -198,14 +198,46 @@ def getExternalPoints(mask):
     coordinates = np.array(labelledVoxelCoordinates, dtype='int').transpose((1, 0))
 
     #show surface in 2 projections
-    plt.imshow(mask[650], cmap=plt.cm.bone)
-    plt.show()
+    #plt.imshow(mask[650], cmap=plt.cm.bone)
+    #plt.show()
 
-    mask = np.moveaxis(mask, 2, 0)
-    plt.imshow(mask[200], cmap=plt.cm.bone)
-    plt.show()
+    #mask = np.moveaxis(mask, 2, 0)
+    #plt.imshow(mask[200], cmap=plt.cm.bone)
+    #plt.show()
 
     return coordinates
+
+def calcMaxRemotedPoints(mask, ds):
+    '''
+    Extracting voxel coordinates of the most remote points 
+    and distance between them
+    '''
+    surface = getExternalPoints(mask)
+    realCoordinates = np.copy(surface)
+    physicalCoordinates = surface * np.array((ds.SliceThickness, ds.PixelSpacing[0], ds.PixelSpacing[0]))
+    
+    xL = calcLeftLen(mask, ds)
+    yL = calcBackLen(mask, ds)
+    zL = calcUpperLen(mask, ds)
+    physicalCoordinates -= np.array((zL, yL, xL))
+    physicalCoordinates -= np.array((z / 2, y / 2, x / 2))
+
+    moovedCoordinates = np.copy(physicalCoordinates)
+
+    quadroCoordintaes = np.multiply(physicalCoordinates, physicalCoordinates)
+    quadroDistances =  np.sum(quadroCoordintaes, axis = 1)
+    distances = np.sqrt(quadroDistances)
+
+    ind = distances.argmax()
+
+    moovedCoordinates -= moovedCoordinates[ind]
+    quadroCoordintaes = np.multiply(moovedCoordinates, moovedCoordinates)
+    quadroDistances =  np.sum(quadroCoordintaes, axis = 1)
+    distances = np.sqrt(quadroDistances)
+
+    ind1 = distances.argmax()
+    return [realCoordinates[ind], realCoordinates[ind1], distances[ind1]]
+
     
 #examples
 #-------------------------------------
@@ -239,5 +271,11 @@ R = calcSphereRadius(mask, ds, x, y, z)
 print('Sphere radius = ', R, ' mm')
 
 coordinates = getExternalPoints(mask)
+print('coordinates of surface:')
 print(coordinates)
-print(len(coordinates))
+print('Number of surface points = ', len(coordinates))
+
+coord1, coord2, dist = calcMaxRemotedPoints(mask, ds)
+
+print('Voxel coordinates of the most remote points and distance between them:')
+print(coord1, coord2, dist)
