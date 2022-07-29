@@ -207,12 +207,14 @@ def getExternalPoints(mask):
 
     return coordinates
 
-def calcMaxRemotedPoints(mask, ds):
+def calcMaxRemotedPoints(surface, ds):
     '''
     Extracting voxel coordinates of the most remote points 
     and distance between them
+    Function gets numPy-array of surface voxel-coordinates of the formation
+    (to find them you can use getExternalPoints()) and one dcm file
+    
     '''
-    surface = getExternalPoints(mask)
     realCoordinates = np.copy(surface)
     physicalCoordinates = surface * np.array((ds.SliceThickness, ds.PixelSpacing[0], ds.PixelSpacing[0]))
     
@@ -270,12 +272,12 @@ print('----------------------------------')
 R = calcSphereRadius(mask, ds, x, y, z)
 print('Sphere radius = ', R, ' mm')
 
-coordinates = getExternalPoints(mask)
+surface = getExternalPoints(mask)
 print('coordinates of surface:')
-print(coordinates)
-print('Number of surface points = ', len(coordinates))
+print(surface)
+print('Number of surface points = ', len(surface))
 
-coord1, coord2, dist = calcMaxRemotedPoints(mask, ds)
+coord1, coord2, dist = calcMaxRemotedPoints(surface, ds)
 
 print('Voxel coordinates of the most remote points and distance between them:')
-print(coord1, coord2, dist)
+print(coord1, coord2, dist, ' mm')
