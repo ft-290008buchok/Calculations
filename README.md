@@ -1,6 +1,5 @@
 # DICOM-data processor
-This feature set is designed for some basic DICOM medical image processing. It uses PyDicom and NumPy libraries.
-(This code is not a commercial product and is written for educational purposes.)   
+This feature set is designed for some basic DICOM medical image processing. It uses PyDicom and NumPy libraries.      
 # Input parameters   
 This feature set accepts a DICOM snapshot and a binary mask in the ".npz" format of segmented shape as input.  Use the "load to numpy.py" to upload a DICOM snapshot.  load to numpy.py converts a DICOM snapshot into a three-dimensional NumPy array that you can open in MainApplication.py.   
 # Output parameters   
