@@ -1,3 +1,4 @@
+#This code is not a commercial product and is written for educational purposes
 import numpy as np
 import math
 import os
